@@ -38,11 +38,6 @@ class op(bpy.types.Operator):
 		return {'FINISHED'}
 
 
-	def invoke(self, context, event):
-		wm = context.window_manager
-		return wm.invoke_props_dialog(self)
-
-
 
 def relax(self, context):
 	# UV to temporary mesh
@@ -120,8 +115,24 @@ def relax(self, context):
 
 	for face_index in copied_uvs:
 		for i, loop in enumerate(bm.faces[face_index].loops):
-			if loop[uv_layers].select:
-				loop[uv_layers].uv = copied_uvs[face_index][i]
+			luv = loop[uv_layers]
+			if luv.select:
+				relaxed_uvs = copied_uvs[face_index][i]
+				
+				precision = 3 
+				x = round(luv.uv.x, precision)
+				y = round(luv.uv.y, precision)
+
+				for linked_loop in loop.vert.link_loops:
+					linked_luv = linked_loop[uv_layers]
+					linked_x = round(linked_luv.uv.x, precision)
+					linked_y = round(linked_luv.uv.y, precision)
+
+					if x == linked_x and y == linked_y:
+						linked_luv.uv = relaxed_uvs
+				
+				luv.uv = relaxed_uvs
+
 
 	# Remove temporary mesh and restore selection mode altered by meshtex_create
 	bpy.data.meshes.remove(temp_obj_data, do_unlink=True)
